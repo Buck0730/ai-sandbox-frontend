@@ -8,13 +8,14 @@ export default function App() {
   const [recentActions, setRecentActions] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const socketRef = useRef(null);
+  const sessionIdRef = useRef(null);
 
   const connectWebSocket = () => {
     if (socketRef.current) {
       socketRef.current.close();
     }
 
-    const ws = new WebSocket("wss://ju0zz8khde.execute-api.us-east-1.amazonaws.com/production/");
+    const ws = new WebSocket("wss://ju0zz8khde.execute-api.us-east-1.amazonaws.com/production");
 
     ws.onopen = () => {
       setStatus("Connected");
@@ -28,8 +29,17 @@ export default function App() {
     setRound(data.round);
     setWorld(data.world);
     setRecentActions(data.recent_actions || []);
-    setSessionId(data.sessionId || sessionId);
-    setMessages((prev) => [...prev, `Received simulation update for round ${data.round}`]);
+
+    if (data.sessionId) {
+      setSessionId(data.sessionId);
+      sessionIdRef.current = data.sessionId;
+    }
+
+    setMessages((prev) => [
+      ...prev,
+      `Received simulation update for round ${data.round}`,
+      `Session ID: ${data.sessionId || sessionIdRef.current || "missing"}`
+    ]);
   } else if (data.type === "error") {
     setMessages((prev) => [...prev, `Error: ${data.message}`]);
   } else {
@@ -64,11 +74,21 @@ export default function App() {
   };
 
   const nextRound = () => {
+  const currentSessionId = sessionIdRef.current;
+
+  if (!currentSessionId) {
+    setMessages((prev) => [
+      ...prev,
+      "No sessionId yet. Click Start Simulation and wait for the session message."
+    ]);
+    return;
+  }
+
   if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
     const payload = {
       action: "sendMessage",
       command: "next_round",
-      sessionId: sessionId
+      sessionId: currentSessionId
     };
 
     socketRef.current.send(JSON.stringify(payload));
