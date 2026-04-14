@@ -84,6 +84,11 @@ export default function App() {
   const nextRound = () => {
   const currentSessionId = sessionIdRef.current;
 
+  setMessages((prev) => [
+    ...prev,
+    `About to send next_round with sessionId: ${currentSessionId || "missing"}`
+  ]);
+
   if (!currentSessionId) {
     setMessages((prev) => [
       ...prev,
