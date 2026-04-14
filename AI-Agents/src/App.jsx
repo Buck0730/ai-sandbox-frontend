@@ -6,6 +6,7 @@ export default function App() {
   const [world, setWorld] = useState(null);
   const [round, setRound] = useState(null);
   const [recentActions, setRecentActions] = useState([]);
+  const [sessionId, setSessionId] = useState(null);
   const socketRef = useRef(null);
 
   const connectWebSocket = () => {
@@ -21,17 +22,20 @@ export default function App() {
     };
 
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+  const data = JSON.parse(event.data);
 
-      if (data.type === "simulation_update") {
-        setRound(data.round);
-        setWorld(data.world);
-        setRecentActions(data.recent_actions || []);
-        setMessages((prev) => [...prev, "Received simulation update"]);
-      } else {
-        setMessages((prev) => [...prev, `Received: ${event.data}`]);
-      }
-    };
+  if (data.type === "simulation_update") {
+    setRound(data.round);
+    setWorld(data.world);
+    setRecentActions(data.recent_actions || []);
+    setSessionId(data.sessionId || null);
+    setMessages((prev) => [...prev, `Received simulation update for round ${data.round}`]);
+  } else if (data.type === "error") {
+    setMessages((prev) => [...prev, `Error: ${data.message}`]);
+  } else {
+    setMessages((prev) => [...prev, `Received: ${event.data}`]);
+  }
+};
 
     ws.onclose = () => {
       setStatus("Disconnected");
@@ -63,7 +67,8 @@ export default function App() {
   if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
     const payload = {
       action: "sendMessage",
-      command: "next_round"
+      command: "next_round",
+      sessionId: sessionId
     };
 
     socketRef.current.send(JSON.stringify(payload));
