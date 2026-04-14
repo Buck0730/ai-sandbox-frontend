@@ -28,7 +28,7 @@ export default function App() {
     setRound(data.round);
     setWorld(data.world);
     setRecentActions(data.recent_actions || []);
-    setSessionId(data.sessionId || null);
+    setSessionId(data.sessionId || sessionId);
     setMessages((prev) => [...prev, `Received simulation update for round ${data.round}`]);
   } else if (data.type === "error") {
     setMessages((prev) => [...prev, `Error: ${data.message}`]);
