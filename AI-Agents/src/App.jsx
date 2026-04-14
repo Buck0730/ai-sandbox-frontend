@@ -34,16 +34,19 @@ export default function App() {
   };
 
   const sendMessage = () => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(
-        JSON.stringify({
-          action: "sendMessage",
-          message: "hello from browser"
-        })
-      );
-    }
-  };
+  if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+    const payload = {
+      action: "sendMessage",
+      message: "hello from browser"
+    };
 
+    socketRef.current.send(JSON.stringify(payload));
+    setMessages((prev) => [...prev, `Sent: ${JSON.stringify(payload)}`]);
+  } else {
+    setMessages((prev) => [...prev, "Socket is not connected"]);
+  }
+};
+  
   useEffect(() => {
     return () => {
       if (socketRef.current) {
