@@ -7,6 +7,7 @@ export default function App() {
   const [round, setRound] = useState(null);
   const [recentActions, setRecentActions] = useState([]);
   const [sessionId, setSessionId] = useState(null);
+  const [history, setHistory] = useState([]);
   const socketRef = useRef(null);
   const sessionIdRef = useRef(null);
 
@@ -23,14 +24,7 @@ export default function App() {
     };
 
     ws.onmessage = (event) => {
-  console.log("RAW EVENT DATA:", event.data);
-
   const data = JSON.parse(event.data);
-
-  setMessages((prev) => [
-    ...prev,
-    `RAW: ${event.data}`
-  ]);
 
   if (data.type === "simulation_update") {
     setRound(data.round);
@@ -42,12 +36,26 @@ export default function App() {
       sessionIdRef.current = data.sessionId;
     }
 
+    setHistory((prev) => [
+      ...prev,
+      {
+        round: data.round,
+        ...data.world
+      }
+    ]);
+
     setMessages((prev) => [
       ...prev,
-      `Received simulation update for round ${data.round}`,
-      `Session ID from payload: ${data.sessionId || "missing"}`,
-      `Session ID in ref: ${sessionIdRef.current || "missing"}`
+      `Round ${data.round} loaded`
     ]);
+  } else if (data.type === "reset_complete") {
+    setRound(null);
+    setWorld(null);
+    setRecentActions([]);
+    setSessionId(null);
+    sessionIdRef.current = null;
+    setHistory([]);
+    setMessages((prev) => [...prev, "Simulation reset"]);
   } else if (data.type === "error") {
     setMessages((prev) => [...prev, `Error: ${data.message}`]);
   } else {
@@ -68,31 +76,26 @@ export default function App() {
   };
 
   const sendMessage = () => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      const payload = {
-        action: "sendMessage",
-        command: "start_simulation"
-      };
+  if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+    const payload = {
+      action: "sendMessage",
+      command: "start_simulation"
+    };
 
-      socketRef.current.send(JSON.stringify(payload));
-      setMessages((prev) => [...prev, `Sent: ${JSON.stringify(payload)}`]);
-    } else {
-      setMessages((prev) => [...prev, "Socket is not connected"]);
-    }
-  };
+    socketRef.current.send(JSON.stringify(payload));
+    setMessages((prev) => [...prev, "Starting simulation..."]);
+  } else {
+    setMessages((prev) => [...prev, "Socket is not connected"]);
+  }
+};
 
   const nextRound = () => {
   const currentSessionId = sessionIdRef.current;
 
-  setMessages((prev) => [
-    ...prev,
-    `About to send next_round with sessionId: ${currentSessionId || "missing"}`
-  ]);
-
   if (!currentSessionId) {
     setMessages((prev) => [
       ...prev,
-      "No sessionId yet. Click Start Simulation and wait for the session message."
+      "No active simulation. Click Start Simulation first."
     ]);
     return;
   }
@@ -103,6 +106,35 @@ export default function App() {
       command: "next_round",
       sessionId: currentSessionId
     };
+
+    socketRef.current.send(JSON.stringify(payload));
+    setMessages((prev) => [...prev, "Advancing to next round..."]);
+  } else {
+    setMessages((prev) => [...prev, "Socket is not connected"]);
+  }
+};
+
+  const resetSimulation = () => {
+  const currentSessionId = sessionIdRef.current;
+
+  if (!currentSessionId) {
+    setMessages((prev) => [...prev, "No active simulation to reset"]);
+    return;
+  }
+
+  if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+    const payload = {
+      action: "sendMessage",
+      command: "reset_simulation",
+      sessionId: currentSessionId
+    };
+
+    socketRef.current.send(JSON.stringify(payload));
+    setMessages((prev) => [...prev, "Resetting simulation..."]);
+  } else {
+    setMessages((prev) => [...prev, "Socket is not connected"]);
+  }
+};
 
     socketRef.current.send(JSON.stringify(payload));
     setMessages((prev) => [...prev, `Sent: ${JSON.stringify(payload)}`]);
@@ -128,6 +160,7 @@ export default function App() {
         <button onClick={connectWebSocket}>Connect</button>
         <button onClick={sendMessage}>Start Simulation</button>
         <button onClick={nextRound}>Next Round</button>
+        <button onClick={resetSimulation}>Reset Simulation</button>
       </div>
 
       {round !== null && <h2>Round: {round}</h2>}
