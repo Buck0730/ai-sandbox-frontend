@@ -236,4 +236,4 @@ const resetSimulation = () => {
       </div>
     </div>
   );
-}
+};
