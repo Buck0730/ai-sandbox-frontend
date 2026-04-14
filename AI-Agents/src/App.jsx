@@ -10,7 +10,7 @@ export default function App() {
       socketRef.current.close();
     }
 
-    const ws = new WebSocket("wss://REPLACE_ME.execute-api.us-east-1.amazonaws.com/production");
+    const ws = new WebSocket("wss://ju0zz8khde.execute-api.us-east-1.amazonaws.com/production/");
 
     ws.onopen = () => {
       setStatus("Connected");
