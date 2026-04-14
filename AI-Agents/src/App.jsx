@@ -124,7 +124,7 @@ export default function App() {
   }
 };
 
-  const resetSimulation = () => {
+const resetSimulation = () => {
   const currentSessionId = sessionIdRef.current;
 
   if (!currentSessionId) {
@@ -138,13 +138,6 @@ export default function App() {
       command: "reset_simulation",
       sessionId: currentSessionId
     };
-
-    socketRef.current.send(JSON.stringify(payload));
-    setMessages((prev) => [...prev, "Resetting simulation..."]);
-  } else {
-    setMessages((prev) => [...prev, "Socket is not connected"]);
-  }
-};
 
     socketRef.current.send(JSON.stringify(payload));
     setMessages((prev) => [...prev, `Sent: ${JSON.stringify(payload)}`]);
