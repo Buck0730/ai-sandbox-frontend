@@ -1,4 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from "recharts";
 
 export default function App() {
   const [status, setStatus] = useState("Disconnected");
@@ -191,6 +201,28 @@ export default function App() {
           ))}
         </div>
       )}
+
+  <div style={{ marginBottom: "24px" }}>
+    <h2>World History</h2>
+    <div style={{ width: "100%", height: 350 }}>
+      <ResponsiveContainer>
+        <LineChart data={history}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="round" />
+          <YAxis domain={[0, 100]} />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="money" />
+          <Line type="monotone" dataKey="fairness" />
+          <Line type="monotone" dataKey="security" />
+          <Line type="monotone" dataKey="resources" />
+          <Line type="monotone" dataKey="crime" />
+          <Line type="monotone" dataKey="approval" />
+          <Line type="monotone" dataKey="environmental_health" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
 
       <div style={{ marginBottom: "24px" }}>
         <h2>Recent Actions</h2>
