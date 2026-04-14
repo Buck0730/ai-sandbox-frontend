@@ -59,6 +59,20 @@ export default function App() {
     }
   };
 
+  const nextRound = () => {
+  if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+    const payload = {
+      action: "sendMessage",
+      command: "next_round"
+    };
+
+    socketRef.current.send(JSON.stringify(payload));
+    setMessages((prev) => [...prev, `Sent: ${JSON.stringify(payload)}`]);
+  } else {
+    setMessages((prev) => [...prev, "Socket is not connected"]);
+  }
+};
+
   useEffect(() => {
     return () => {
       if (socketRef.current) {
@@ -75,6 +89,7 @@ export default function App() {
       <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
         <button onClick={connectWebSocket}>Connect</button>
         <button onClick={sendMessage}>Start Simulation</button>
+        <button onClick={nextRound}>Next Round</button>
       </div>
 
       {round !== null && <h2>Round: {round}</h2>}
