@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from "react";
 export default function App() {
   const [status, setStatus] = useState("Disconnected");
   const [messages, setMessages] = useState([]);
+  const [world, setWorld] = useState(null);
+  const [round, setRound] = useState(null);
+  const [recentActions, setRecentActions] = useState([]);
   const socketRef = useRef(null);
 
   const connectWebSocket = () => {
@@ -18,7 +21,16 @@ export default function App() {
     };
 
     ws.onmessage = (event) => {
-      setMessages((prev) => [...prev, `Received: ${event.data}`]);
+      const data = JSON.parse(event.data);
+
+      if (data.type === "simulation_update") {
+        setRound(data.round);
+        setWorld(data.world);
+        setRecentActions(data.recent_actions || []);
+        setMessages((prev) => [...prev, "Received simulation update"]);
+      } else {
+        setMessages((prev) => [...prev, `Received: ${event.data}`]);
+      }
     };
 
     ws.onclose = () => {
@@ -34,19 +46,19 @@ export default function App() {
   };
 
   const sendMessage = () => {
-  if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-    const payload = {
-      action: "sendMessage",
-      message: "hello from browser"
-    };
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      const payload = {
+        action: "sendMessage",
+        command: "start_simulation"
+      };
 
-    socketRef.current.send(JSON.stringify(payload));
-    setMessages((prev) => [...prev, `Sent: ${JSON.stringify(payload)}`]);
-  } else {
-    setMessages((prev) => [...prev, "Socket is not connected"]);
-  }
-};
-  
+      socketRef.current.send(JSON.stringify(payload));
+      setMessages((prev) => [...prev, `Sent: ${JSON.stringify(payload)}`]);
+    } else {
+      setMessages((prev) => [...prev, "Socket is not connected"]);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (socketRef.current) {
@@ -56,13 +68,51 @@ export default function App() {
   }, []);
 
   return (
-    <div style={{ padding: "24px", fontFamily: "Arial" }}>
+    <div style={{ padding: "24px", fontFamily: "Arial", maxWidth: "1100px", margin: "0 auto" }}>
       <h1>AI Simulation Sandbox</h1>
       <p>Status: {status}</p>
 
-      <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+      <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
         <button onClick={connectWebSocket}>Connect</button>
-        <button onClick={sendMessage}>Send Test Message</button>
+        <button onClick={sendMessage}>Start Simulation</button>
+      </div>
+
+      {round !== null && <h2>Round: {round}</h2>}
+
+      {world && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "12px",
+            marginBottom: "24px"
+          }}
+        >
+          {Object.entries(world).map(([key, value]) => (
+            <div
+              key={key}
+              style={{
+                border: "1px solid #ccc",
+                borderRadius: "8px",
+                padding: "12px",
+                background: "#f7f7f7",
+                color: "#111"
+              }}
+            >
+              <strong>{key.replaceAll("_", " ")}</strong>
+              <div>{value}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginBottom: "24px" }}>
+        <h2>Recent Actions</h2>
+        <ul>
+          {recentActions.map((action, index) => (
+            <li key={index}>{action}</li>
+          ))}
+        </ul>
       </div>
 
       <div>
