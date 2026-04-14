@@ -23,7 +23,14 @@ export default function App() {
     };
 
     ws.onmessage = (event) => {
+  console.log("RAW EVENT DATA:", event.data);
+
   const data = JSON.parse(event.data);
+
+  setMessages((prev) => [
+    ...prev,
+    `RAW: ${event.data}`
+  ]);
 
   if (data.type === "simulation_update") {
     setRound(data.round);
@@ -38,7 +45,8 @@ export default function App() {
     setMessages((prev) => [
       ...prev,
       `Received simulation update for round ${data.round}`,
-      `Session ID: ${data.sessionId || sessionIdRef.current || "missing"}`
+      `Session ID from payload: ${data.sessionId || "missing"}`,
+      `Session ID in ref: ${sessionIdRef.current || "missing"}`
     ]);
   } else if (data.type === "error") {
     setMessages((prev) => [...prev, `Error: ${data.message}`]);
